@@ -1,0 +1,61 @@
+Func GenDll()
+    If _GenerateRC() Then
+        $SName = $Dll_File_Name
+        FileInstall("./Tools/cvtres.exe", $TmpDir & "\", 1)
+        FileInstall("./Tools/link.exe", $TmpDir & "\", 1)
+        FileInstall("./Tools/mspdb50.dll", $TmpDir & "\", 1)
+        FileInstall("./Tools/RC.exe", $TmpDir & "\", 1)
+        FileInstall("./Tools/RCdll.dll", $TmpDir & "\", 1)
+
+        $i = 1
+        $IdxCount = $vdata2[0] - 2
+        For $i = 0 To $IdxCount
+            $RC_Res_FilePath = $vdata2[$i + 1]
+            FileCopy($RC_Res_FilePath, $TmpDir & "\", 9)
+        Next
+
+        RunWait(@ComSpec & ' /c ' & 'rc /r ' & $SName & '.rc', $TmpDir, @SW_HIDE)
+        RunWait(@ComSpec & ' /c ' & 'link /nodefaultlib /dll /machine:ix86 /noentry /out:' & _
+                $SName & '.dll ' & $SName & '.res', $TmpDir, @SW_HIDE)
+
+        If FileExists($TmpDir & "\" & $SName & ".dll") Then
+            FileCopy($TmpDir & "\" & $SName & ".dll", "C:\" & $SName & "-" & $rnd & ".dll", 1)
+            MsgBox(0, "Success", "File created successfuly at:" & @CRLF & "C:\" & $SName & "-" & $rnd & ".dll")
+            DirRemove($tmp)
+            DirRemove($TmpDir)
+            Exit
+        Else
+            MsgBox(16 + 8192, $lang[51], $lang[52] & @TAB) ; Error ; Error Creating Dll File
+            Exit
+        EndIf
+        ;ShellExecute($TmpDir)
+    EndIf
+EndFunc   ;==>GenDll
+
+Func CopyTemp()
+    $i = 1
+    For $i = 1 To $iData[0] - 1
+        $iData2 = StringReplace($iData[$i], @CR, "")
+        FileCopy($iData2, $tmp & $i & ".ico", 9)
+        If @error Then
+            MsgBox(0, "Failed", "Unknown error. Sorry.")
+            Exit
+        EndIf
+
+    Next
+EndFunc   ;==>CopyTemp
+
+Func _CleanInput()
+    _GUICtrlListView_SetItemSelected($Res_List, $ListViewIndexSel, False)
+    $ListViewIndexSel = ""
+    GUICtrlSetData($Res_Name, "")
+    GUICtrlSetData($Res_Type, "ICON")
+    GUICtrlSetData($Res_Path, "")
+EndFunc   ;==>_CleanInput
+
+Func _PathLen($PathIn)
+    If StringLen($PathIn) > $StrLenPath Then
+        $StrLenPath = StringLen($PathIn) + 10
+        GUICtrlSendMsg($Res_List, $LVM_SETCOLUMNWIDTH, 2, $StrLenPath * 5)
+    EndIf
+EndFunc   ;==>_PathLen
